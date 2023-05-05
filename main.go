@@ -92,10 +92,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/xuri/excelize/v2"
 	"golang.org/x/net/html"
 )
 
-var body = strings.NewReader(`                                                                                                                                      
+var body = strings.NewReader(`      
+
 <html>
   <body>
   <table border='0' cellpadding='0' cellspacing='0' width='734' style='border-collapse: 
@@ -3323,4 +3325,66 @@ func main() {
 
 	// Print to check the slice's content
 	fmt.Println(table)
+
+	f, err := excelize.OpenFile("AP2.2 (2023.04.01).xlsx")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		// Close the spreadsheet.
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	rows, err := f.GetRows("Ai")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("len(rows)", len(rows))
+	for _, row := range rows {
+		fmt.Println("len(row)", len(row))
+		for _, colCell := range row {
+			fmt.Print(colCell, "\t")
+		}
+		fmt.Println()
+	}
+
+	aw, _ := f.GetColWidth("Ai", "A")
+	bw, _ := f.GetColWidth("Ai", "B")
+	cw, _ := f.GetColWidth("Ai", "C")
+	dw, _ := f.GetColWidth("Ai", "D")
+
+	fmt.Println(aw, bw, cw, dw)
+
+	// for _, col := range cols {
+	// 	for _, rowCell := range col {
+	// 		fmt.Print(rowCell, "\t")
+	// 	}
+	// 	fmt.Println()
+	// }
+
+	// f.GetColWidth("Ai", "B2")
+	// // Get value from cell by given worksheet name and cell reference.
+	// cell, err := f.GetCellValue
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+
+	// }
+	// fmt.Println(cell)
+	// // Get all the rows in the Sheet1.
+	// rows, err := f.GetRows("Sheet1")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// for _, row := range rows {
+	// 	for _, colCell := range row {
+	// 		fmt.Print(colCell, "\t")
+	// 	}
+	// 	fmt.Println()
+	// }
 }
