@@ -3326,38 +3326,112 @@ func main() {
 	// Print to check the slice's content
 	fmt.Println(table)
 
-	f, err := excelize.OpenFile("AP2.2 (2023.04.01).xlsx")
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	// for _, sheetName := range f.GetSheetList() {
+	// 	fmt.Println(sheetName)
+	// 	err := f.DeleteSheet(sheetName)
+	//   if err != nil {
+	//     fmt.Println(err)
+	//   }
+	// }
+
+	// Create a new sheet.
+	_, err := f.NewSheet("Ai")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	f.DeleteSheet("Sheet1")
+
+	template, err := excelize.OpenFile("AP2.2 (2023.04.01).xlsx")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer func() {
 		// Close the spreadsheet.
-		if err := f.Close(); err != nil {
+		if err := template.Close(); err != nil {
 			fmt.Println(err)
 		}
 	}()
 
-	rows, err := f.GetRows("Ai")
+	rows, err := template.GetRows("Ai")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println("len(rows)", len(rows))
-	for _, row := range rows {
-		fmt.Println("len(row)", len(row))
-		for _, colCell := range row {
+	for i, row := range rows {
+		cell, _ := excelize.CoordinatesToCellName(1, i+1) //A1A2A3A4...
+
+		_, rowNumeric, _ := excelize.SplitCellName(cell)
+
+		rowHeight, _ := template.GetRowHeight("Ai", rowNumeric)
+		fmt.Println("len(row)", len(row), "!!!!", cell, "***", rowHeight)
+		f.SetRowHeight("Ai", rowNumeric, rowHeight)
+
+		f.SetSheetRow("Ai", cell, &row)
+
+		for j, colCell := range row {
+			sss, _ := excelize.CoordinatesToCellName(j+1, i+1)
+			colAlpha, _, _ := excelize.SplitCellName(sss)
+			colWidth, _ := template.GetColWidth("Ai", colAlpha)
+			f.SetColWidth("Ai", colAlpha, colAlpha, colWidth)
+			fmt.Println("????", sss)
 			fmt.Print(colCell, "\t")
 		}
+
 		fmt.Println()
 	}
 
-	aw, _ := f.GetColWidth("Ai", "A")
-	bw, _ := f.GetColWidth("Ai", "B")
-	cw, _ := f.GetColWidth("Ai", "C")
-	dw, _ := f.GetColWidth("Ai", "D")
+	mergeCells, _ := template.GetMergeCells("Ai")
+	for _, mergeCell := range mergeCells {
+		mergeCellCoord := strings.Split(mergeCell[0], ":")
+		fmt.Println("Ai", mergeCellCoord[0], mergeCellCoord[1])
+		f.MergeCell("Ai", mergeCellCoord[0], mergeCellCoord[1])
+	}
 
-	fmt.Println(aw, bw, cw, dw)
+	// aw, _ := template.GetColWidth("Ai", "A")
+	// f.SetColWidth("Ai", "A", "A", aw)
+
+	// bw, _ := template.GetColWidth("Ai", "B")
+	// f.SetColWidth("Ai", "B", "B", bw)
+
+	// cw, _ := template.GetColWidth("Ai", "C")
+	// f.SetColWidth("Ai", "C", "C", cw)
+
+	// dw, _ := template.GetColWidth("Ai", "D")
+	// f.SetColWidth("Ai", "D", "D", dw)
+
+	templatePageLayout, _ := template.GetPageLayout("Ai")
+	f.SetPageLayout("Ai", &templatePageLayout)
+
+	templatePageMargins, _ := template.GetPageMargins("Ai")
+	f.SetPageMargins("Ai", &templatePageMargins)
+
+	templateSheetProps, _ := template.GetSheetProps("Ai")
+	f.SetSheetProps("Ai", &templateSheetProps)
+
+	templateSheetVisible, _ := template.GetSheetVisible("Ai")
+	f.SetSheetVisible("Ai", templateSheetVisible)
+
+	templateDefaultFont, _ := template.GetDefaultFont()
+	f.SetDefaultFont(templateDefaultFont)
+
+	templateSheetDimension, _ := template.GetSheetDimension("Ai")
+	f.SetSheetDimension("Ai", templateSheetDimension)
+
+	// Save spreadsheet by the given path.
+	if err := f.SaveAs("Book1.xlsx"); err != nil {
+		fmt.Println(err)
+	}
 
 	// for _, col := range cols {
 	// 	for _, rowCell := range col {
@@ -3372,7 +3446,6 @@ func main() {
 	// if err != nil {
 	// 	fmt.Println(err)
 	// 	return
-
 	// }
 	// fmt.Println(cell)
 	// // Get all the rows in the Sheet1.
